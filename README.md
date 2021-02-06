@@ -132,7 +132,7 @@ Suppose the ETH price has gone up to US$ 1400, and considering that the strike p
 All open positions owned by an address (written or held) are taken into account for allocating collateral regardless of the underlying, option type and maturity, according to the following formula implemented in solidity code:
 
 <p align="center">
-<img src="https://latex.codecogs.com/svg.latex?%5Cbegin%7Balign*%7Dcollateral%20%3D%20%5Csum_%7Bi%7D%5E%7B%7D%5Cleft%5Bk_%7Bupper%7D%20%5Ctimes%20%5Csigma%20_%7Bunderlying_%7Bi%7D%7D%20%5Ctimes%20%5Csqrt%7Bdays%5C%20to%5C%20maturity%7D%20%26plus%3B%20%5Cupsilon%5Cleft%20%28%20%20option_%7Bi%7D%5E%7B%7D%20%5Cright%20%29%20%5Cright%5D%5Ctimes%20volume_%7Bi%7D%20-%20%5Csum_%7Bj%7D%5E%7B%7D%5Cupsilon%5Cleft%20%28%20option_%7Bj%7D%5E%7B%7D%20%5Cright%20%29%5Ctimes%20volume_%7Bj%7D%5Cend%7Balign*%7D">
+<img src="https://latex.codecogs.com/svg.latex?%5Cbegin%7Balign*%7Dcollateral%20%3D%20%5Csum_%7Bi%7D%5E%7B%7D%5Cleft%5Bk_%7Bupper%7D%20%5Ctimes%20%5Csigma%20_%7Bunderlying_%7Bi%7D%7D%20%5Ctimes%20%5Csqrt%7Bdays%5C%20to%5C%20maturity%7D%20%26plus%3B%20%5Cupsilon%5Cleft%20%20%28%20%20option_%7Bi%7D%5E%7B%7D%20%5Cright%20%29%20%5Cright%5D%5Ctimes%20volume_%7Bi%7D%20-%20%5Csum_%7Bj%7D%5E%7B%7D%5Cupsilon%5Cleft%20%28%20option_%7Bj%7D%5E%7B%7D%20%5Cright%20%29%5Ctimes%20volume_%7Bj%7D%5Cend%7Balign*%7D">
 </p>
 
 A short position "i" increases required collateral proportionally to the written volume taking into account the period adjusted on-chain historical underlying price volatility and the option intrinsic value ("υ"). A long position "j" decreases required collateral proportionally to the held volume taking into account the option intrinsic value alone. The k<sub>upper</sub> constant plays a role in the liquidation process and serves as an additional security factor protecting against the inherent uncertainty of the underlying price volatility (i.e. the volatility-of-volatility risk).
@@ -289,9 +289,10 @@ The main goal of this project is to deploy Options Exchange to mainnet, however 
 
 There are a few major technical challenges that will need to get dealt with if the project gains traction and is deployed to mainnet:
 
-* Development of a front-end application
-* Introduction of liquidity pools
-* Improvement of governance functionality
+* Development of a dapp front-end application to make the exchange accessible to non-developers
+* Design and implementation of a liquidity pool, which will involve knowledge in finance and option pricing models
+* Allow deposit/withdraw of underlying assets (ex: ETH, BTC) so they can be provided as collateral for writing options against them
+* Improvement the incipient governance functionality ([contracts/governance](https://github.com/TCGV/DeFiOptions/tree/master/contracts/governance))
 
 ### Support mainnet
 
