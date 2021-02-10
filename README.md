@@ -1,6 +1,6 @@
 # DeFiOptions
 
-Experimental DeFi options trading smart contracts enabling long and short positions for call and put european style options.
+Experimental DeFi options trading smart contracts enabling long and short positions for call and put tokenized, collateralized, cash settable european style options.
 
 <p align="center">
 <img src="https://github.com/TCGV/DeFiOptions/blob/master/diagram.PNG?raw=true" width="500" />
@@ -275,6 +275,8 @@ fakecoin.issue(to, value);
 ## Get involved
 
 Did you like this project and wanna get involved? There are three ways in which you can contribute! See below.
+
+Before starting simply [shoot me a message](mailto:thomas.vilhena+defioptions@gmail.com?subject=DeFiOptions%20%7C%20Interested%20Contributor) describing how do you wish to contribute o we can arrange a plan accordingly.</i>
 
 ### Validate code
 
