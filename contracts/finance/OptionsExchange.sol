@@ -47,7 +47,7 @@ contract OptionsExchange is ManagedContract {
     mapping(string => uint[]) private tokensIds;
     
     uint private serial;
-    uint private bookLength;
+    uint private bookLength; // TODO: remove unused variable
     uint private volumeBase;
     uint private timeBase;
     uint private sqrtTimeBase;
@@ -88,12 +88,6 @@ contract OptionsExchange is ManagedContract {
     function balanceOf(address owner) external view returns (uint) {
 
         return creditProvider.balanceOf(owner);
-    }
-
-    function transferBalance(address to, uint value) external {
-
-        creditProvider.transferBalance(msg.sender, to, value);
-        ensureFunds(msg.sender);
     }
     
     function withdrawTokens(uint value) external {
@@ -146,7 +140,6 @@ contract OptionsExchange is ManagedContract {
             toOrd.holding = 0;
             orders[toOrd.id] = toOrd;
             book[to].push(toOrd.id);
-            bookLength++;
             tokensIds[code].push(toOrd.id);
         }
         
@@ -173,49 +166,57 @@ contract OptionsExchange is ManagedContract {
         require(isValid(ord), "order not found");
         require(ord.written >= volume && ord.holding >= volume, "invalid volume");
         
-        orders[ord.id].written = orders[ord.id].written.sub(volume);
-        orders[ord.id].holding = orders[ord.id].holding.sub(volume);
+        orders[ord.id].written = ord.written.sub(volume);
+        orders[ord.id].holding = ord.holding.sub(volume);
 
         if (shouldRemove(ord.id)) {
             removeOrder(code, ord.id);
         }
     }
 
-    function liquidateCode(string calldata code) external {
+    function liquidateCode(string calldata code, uint limit) external {
 
-        require(optionTokens[code] == msg.sender, "unauthorized liquidate");
-
-        int udlPrice;
         uint value;
-        uint _now;
+        int udlPrice;
+        uint iv;
+        uint len = tokensIds[code].length;
+        OrderData memory ord;
 
-        uint[] memory ids = tokensIds[code];
-        for (uint i = 0; i < ids.length; i++) {
+        if (len > 0) {
 
-            uint id = ids[i];
+            for (uint i = 0; i < len && i < limit; i++) {
+                
+                uint id = tokensIds[code][0];
+                ord = orders[id];
 
-            if (_now == 0) {
-                _now = getUdlNow(orders[id]);
-                udlPrice = getUdlPrice(orders[id]);
-            }
+                if (i == 0) {
+                    udlPrice = getUdlPrice(ord);
+                    uint _now = getUdlNow(ord);
+                    iv = uint(calcIntrinsicValue(ord));
+                    require(ord.option.maturity <= _now, "maturity not reached");
+                }
 
-            require(orders[id].id == id, "invalid order id");
-            require(orders[id].option.maturity <= _now, "maturity not reached");
+                require(ord.id == id, "invalid order id");
 
-            if (orders[id].written > 0) {
-                value.add(liquidateOptions(id));
-            } else {
-                removeOrder(code, id);
+                if (ord.written > 0) {
+                    value.add(
+                        liquidateAfterMaturity(ord, code, msg.sender, iv.mul(ord.written))
+                    );
+                } else {
+                    removeOrder(code, id);
+                }
             }
         }
 
-        delete tokensIds[code];
-        delete optionTokens[code];
+        if (len <= limit) {
+            delete tokensIds[code];
+            delete optionTokens[code];
+        }
 
         emit LiquidateCode(code, udlPrice, value);
     }
 
-    function liquidateOptions(uint id) public returns (uint value) {
+    function liquidateOptions(uint id) external returns (uint value) {
         
         OrderData memory ord = orders[id];
         require(ord.id == id && ord.written > 0, "invalid order id");
@@ -225,14 +226,7 @@ contract OptionsExchange is ManagedContract {
         uint iv = uint(calcIntrinsicValue(ord)).mul(ord.written);
         
         if (getUdlNow(ord) >= ord.option.maturity) {
-            
-            if (iv > 0) {
-                value = iv.div(volumeBase);
-                creditProvider.processPayment(ord.owner, token, value);
-            }
-        
-            removeOrder(code, id);
-            
+            value = liquidateAfterMaturity(ord, code, token, iv);
         } else {
             value = liquidateBeforeMaturity(ord, code, token, iv);
         }
@@ -297,24 +291,6 @@ contract OptionsExchange is ManagedContract {
         return uint(collateral);
     }
 
-    function calcExpectedPayout(address owner) external view returns (int payout) {
-
-        for (uint i = 0; i < book[owner].length; i++) {
-
-            OrderData memory ord = orders[book[owner][i]];
-
-            if (isValid(ord)) {
-                payout = payout.add(
-                    calcIntrinsicValue(ord).mul(
-                        int(ord.holding).sub(int(ord.written))
-                    )
-                );
-            }
-        }
-
-        payout = payout.div(int(volumeBase));
-    }
-
     function resolveCode(uint id) external view returns (string memory) {
         
         return getOptionCode(orders[id]);
@@ -327,21 +303,13 @@ contract OptionsExchange is ManagedContract {
         return addr;
     }
 
-    function resolveToken(string memory code) public view returns (address) {
+    function getBookLength() external view returns (uint len) {
         
-        address addr = optionTokens[code];
-        require(addr != address(0), "token not found");
-        return addr;
-    }
-
-    function getBookLength() external view returns (uint) {
-        
-        return bookLength;
-    }
-
-    function getVolumeBase() external view returns (uint) {
-        
-        return volumeBase;
+        for (uint i = 0; i < serial; i++) {
+            if (isValid(orders[i])){
+                len++;
+            }
+        }
     }
     
     function calcLowerCollateral(uint id) external view returns (uint) {
@@ -387,7 +355,6 @@ contract OptionsExchange is ManagedContract {
         } else {
             orders[id] = ord;
             book[msg.sender].push(ord.id);
-            bookLength++;
             tokensIds[code].push(ord.id);
         }
 
@@ -395,7 +362,8 @@ contract OptionsExchange is ManagedContract {
             optionTokens[code] = address(
                 new OptionToken(
                     code,
-                    address(this)
+                    address(this),
+                    address(creditProvider)
                 )
             );
             emit CreateCode(code);
@@ -452,6 +420,23 @@ contract OptionsExchange is ManagedContract {
         }
     }
 
+    function liquidateAfterMaturity(
+        OrderData memory ord,
+        string memory code,
+        address token,
+        uint iv
+    )
+        private
+        returns (uint value)
+    {
+        if (iv > 0) {
+            value = iv.div(volumeBase);
+            creditProvider.processPayment(ord.owner, token, value);
+        }
+    
+        removeOrder(code, ord.id);
+    }
+
     function liquidateBeforeMaturity(
         OrderData memory ord,
         string memory code,
@@ -496,7 +481,6 @@ contract OptionsExchange is ManagedContract {
         Arrays.removeItem(tokensIds[code], id);
         Arrays.removeItem(book[orders[id].owner], id);
         delete orders[id];
-        bookLength--;
     }
 
     function getOptionCode(OrderData memory ord) private view returns (string memory code) {
@@ -515,10 +499,12 @@ contract OptionsExchange is ManagedContract {
     
     function ensureFunds(address owner) private view {
         
-        require(
-            creditProvider.balanceOf(owner) >= calcCollateral(owner),
-            "insufficient collateral"
-        );
+        require(hasRequiredCollateral(owner), "insufficient collateral");
+    }
+    
+    function hasRequiredCollateral(address owner) private view returns (bool) {
+        
+        return creditProvider.balanceOf(owner) >= calcCollateral(owner);
     }
     
     function calcCollateral(uint vol, OrderData memory ord) private view returns (uint) {
