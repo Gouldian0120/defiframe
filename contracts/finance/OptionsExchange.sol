@@ -89,12 +89,6 @@ contract OptionsExchange is ManagedContract {
 
         return creditProvider.balanceOf(owner);
     }
-
-    function transferBalance(address to, uint value) external {
-
-        creditProvider.transferBalance(msg.sender, to, value);
-        ensureFunds(msg.sender);
-    }
     
     function withdrawTokens(uint value) external {
         
@@ -276,11 +270,10 @@ contract OptionsExchange is ManagedContract {
     function calcCollateral(address owner) public view returns (uint) {
         
         int collateral;
-        uint[] memory ids = book[owner];
 
-        for (uint i = 0; i < ids.length; i++) {
+        for (uint i = 0; i < book[owner].length; i++) {
 
-            OrderData memory ord = orders[ids[i]];
+            OrderData memory ord = orders[book[owner][i]];
 
             if (isValid(ord)) {
                 collateral = collateral.add(
@@ -298,26 +291,6 @@ contract OptionsExchange is ManagedContract {
         return uint(collateral);
     }
 
-    function calcExpectedPayout(address owner) external view returns (int payout) {
-
-        uint[] memory ids = book[owner];
-
-        for (uint i = 0; i < ids.length; i++) {
-
-            OrderData memory ord = orders[ids[i]];
-
-            if (isValid(ord)) {
-                payout = payout.add(
-                    calcIntrinsicValue(ord).mul(
-                        int(ord.holding).sub(int(ord.written))
-                    )
-                );
-            }
-        }
-
-        payout = payout.div(int(volumeBase));
-    }
-
     function resolveCode(uint id) external view returns (string memory) {
         
         return getOptionCode(orders[id]);
@@ -330,13 +303,6 @@ contract OptionsExchange is ManagedContract {
         return addr;
     }
 
-    function resolveToken(string memory code) public view returns (address) {
-        
-        address addr = optionTokens[code];
-        require(addr != address(0), "token not found");
-        return addr;
-    }
-
     function getBookLength() external view returns (uint len) {
         
         for (uint i = 0; i < serial; i++) {
@@ -344,11 +310,6 @@ contract OptionsExchange is ManagedContract {
                 len++;
             }
         }
-    }
-
-    function getVolumeBase() external view returns (uint) {
-        
-        return volumeBase;
     }
     
     function calcLowerCollateral(uint id) external view returns (uint) {
@@ -388,8 +349,8 @@ contract OptionsExchange is ManagedContract {
 
         OrderData memory result = findOrder(book[msg.sender], code);
         if (isValid(result)) {
-            orders[result.id].written = result.written.add(volume);
-            orders[result.id].holding = result.holding.add(volume);
+            orders[result.id].written = orders[result.id].written.add(volume);
+            orders[result.id].holding = orders[result.id].holding.add(volume);
             id = result.id;
         } else {
             orders[id] = ord;
@@ -397,19 +358,18 @@ contract OptionsExchange is ManagedContract {
             tokensIds[code].push(ord.id);
         }
 
-        address tk = optionTokens[code];
-        if (tk == address(0)) {
-            tk = address(
+        if (optionTokens[code] == address(0)) {
+            optionTokens[code] = address(
                 new OptionToken(
                     code,
-                    address(this)
+                    address(this),
+                    address(creditProvider)
                 )
             );
-            optionTokens[code] = tk;
             emit CreateCode(code);
         }
         
-        OptionToken(tk).issue(msg.sender, volume);
+        OptionToken(optionTokens[code]).issue(msg.sender, volume);
         emit WriteOptions(code, msg.sender, volume, id);
     }
 
@@ -539,10 +499,12 @@ contract OptionsExchange is ManagedContract {
     
     function ensureFunds(address owner) private view {
         
-        require(
-            creditProvider.balanceOf(owner) >= calcCollateral(owner),
-            "insufficient collateral"
-        );
+        require(hasRequiredCollateral(owner), "insufficient collateral");
+    }
+    
+    function hasRequiredCollateral(address owner) private view returns (bool) {
+        
+        return creditProvider.balanceOf(owner) >= calcCollateral(owner);
     }
     
     function calcCollateral(uint vol, OrderData memory ord) private view returns (uint) {
