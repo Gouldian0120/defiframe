@@ -85,8 +85,8 @@ Before writing an option calculate the amount of collateral needed by calling th
 
 ```solidity
 address eth_usd_feed = address(0x987...);
-uint volumeBase = 1e9;
-uint strikePrice = 1300e8;
+uint volumeBase = 1e18;
+uint strikePrice = 1300e18;
 uint maturity = now + 30 days;
 
 uint collateral = exchange.calcCollateral(
@@ -131,7 +131,7 @@ The `calcIntrinsicValue` allows callers to check the updated intrinsict value fo
 uint iv = exchange.calcIntrinsicValue(id);
 ```
 
-Suppose the ETH price has gone up to US$ 1400, and considering that the strike price was set to US$ 1300, then the intrinsic value returned would be `100e8`, i.e., US$ 100. Multiply this value by the held volume to obtain the position's aggregated intrinsic value.
+Suppose the ETH price has gone up to US$ 1400, and considering that the strike price was set to US$ 1300, then the intrinsic value returned would be `100e18`, i.e., US$ 100. Multiply this value by the held volume to obtain the position's aggregated intrinsic value.
 
 ### Collateral allocation
 
@@ -304,7 +304,7 @@ Where:
 
 - The type code will be “EC” for European Call or “EP” for European Put.
 
-- Strike price is provided in the base currency using a “1e8” decimal base. For instance, considering the USD base currency, 175e9 is equivalent to 1750e8 which in turn converts to 1750 USD.
+- Strike price is provided in the base currency using a “1e18” decimal base. For instance, considering the USD base currency, 175e19 is equivalent to 1750e18 which in turn converts to 1750 USD.
 
 - Maturity is provided as a Unix timestamp from epoch. For instance, 161784e4 is equivalent to 1617840000 which in turn converts to “GMT: Thursday, 8 April 2021 00:00:00”.
 
@@ -345,14 +345,14 @@ The Options Exchange is available on kovan testnet for validation. Contract addr
 | [Linear Liquidity Pool](https://github.com/TCGV/DeFiOptions/blob/master/contracts/pools/LinearLiquidityPool.sol) | [0x5e40a65621d14102e2fa532694bcd640bdd53cfb](https://kovan.etherscan.io/address/0x5e40a65621d14102e2fa532694bcd640bdd53cfb) |
 | [ETH/USD feed](https://github.com/TCGV/DeFiOptions/blob/master/contracts/interfaces/UnderlyingFeed.sol)          | [0xb287A334718C976718F081d1060A84CbbCf5E0ba](https://kovan.etherscan.io/address/0xb287A334718C976718F081d1060A84CbbCf5E0ba) |
 | [BTC/USD feed](https://github.com/TCGV/DeFiOptions/blob/master/contracts/interfaces/UnderlyingFeed.sol)          | [0x5Cb3e5A973cD838d46509EFf159011689A19772A](https://kovan.etherscan.io/address/0x5Cb3e5A973cD838d46509EFf159011689A19772A) |
-| [ERC20Mock](https://github.com/TCGV/DeFiOptions/blob/master/test/common/mock/ERC20Mock.sol)                      | [0xdd831B3a8D411129e423C9457a110f984e0f2A61](https://kovan.etherscan.io/address/0xdd831B3a8D411129e423C9457a110f984e0f2A61) |
+| [ERC20Mock](https://github.com/TCGV/DeFiOptions/blob/master/test/common/mock/ERC20Mock.sol)                      | [0xA293d8953998A3a2635475F4e077301aD9061507](https://kovan.etherscan.io/address/0xA293d8953998A3a2635475F4e077301aD9061507) |
 
 A freely issuable ERC20 fake stablecoin ("fakecoin") is provided for convenience. Simply issue fakecoin tokens for an address you own to be able to interact with the exchange for depositing funds, writing options and evaluate its functionality:
 
 ```solidity
 ERC20Mock fakecoin = ERC20Mock(0xdd8...);
 address to = 0xABC
-uint value = 1500e8;
+uint value = 1500e18;
 fakecoin.issue(to, value);
 ```
 
@@ -375,7 +375,7 @@ The main goal of this project is to deploy Options Exchange to mainnet, however 
 
 There are a few major technical challenges that will need to get dealt with if the project gains traction and is deployed to mainnet:
 
-* Development of a dapp front-end application to make the exchange accessible to non-developers
+* Development of a dapp front-end application to make the exchange accessible to non-developers ([in progress](https://github.com/remote-gildor/DeFiOptions-frontend))
 * ~~Design and implementation of a liquidity pool, which will involve knowledge in finance and option pricing models~~
 * Allow deposit/withdraw of underlying assets (ex: ETH, BTC) so they can be provided as collateral for writing options against them
 * Improvement of the incipient governance functionality ([contracts/governance](https://github.com/TCGV/DeFiOptions/tree/master/contracts/governance))
