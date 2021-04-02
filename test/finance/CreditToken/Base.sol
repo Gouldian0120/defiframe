@@ -9,7 +9,6 @@ import "../../../contracts/deployment/Deployer.sol";
 import "../../common/actors/CreditHolder.sol";
 import "../../common/actors/ShareHolder.sol";
 import "../../common/mock/ERC20Mock.sol";
-import "../../common/mock/EthFeedMock.sol";
 import "../../common/mock/TimeProviderMock.sol";
 
 contract Base {

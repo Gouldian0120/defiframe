@@ -22,6 +22,7 @@ contract ProtocolSettings is ManagedContract {
     }
 
     TimeProvider private time;
+    UnderlyingFeed private defaultUdlFeed;
     CreditProvider private creditProvider;
     GovToken private govToken;
 
@@ -189,6 +190,17 @@ contract ProtocolSettings is ManagedContract {
         
         ensureWritePriviledge();
         processingFee = Rate(f, b, MAX_UINT);
+    }
+
+    function getDefaultUdlFeed() external view returns (address addr) {
+
+        return address(defaultUdlFeed);
+    }
+
+    function setDefaultUdlFeed(address addr) external {
+
+        ensureWritePriviledge();
+        defaultUdlFeed = UnderlyingFeed(addr);
     }
 
     function getUdlFeed(address addr) external view returns (int) {

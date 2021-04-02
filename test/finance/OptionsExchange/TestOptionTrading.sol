@@ -180,7 +180,7 @@ contract TestOptionTrading is Base {
     function testWriteBurnAndDestroy() public {
 
         uint ct = exchange.calcCollateral(
-            address(feed), 
+            address(0), 
             300 * volumeBase, 
             CALL, 
             uint(ethInitialPrice), 

@@ -66,10 +66,11 @@ contract Base {
         erc20 = new ERC20Mock();
         settings.setOwner(address(this));
         settings.setAllowedToken(address(erc20), 1, 1);
+        settings.setDefaultUdlFeed(address(feed));
         settings.setUdlFeed(address(feed), 1);
 
-        bob = new PoolTrader(address(erc20), address(exchange), address(pool), address(feed));
-        alice = new PoolTrader(address(erc20), address(exchange), address(pool), address(feed));
+        bob = new PoolTrader(address(erc20), address(exchange), address(pool));
+        alice = new PoolTrader(address(erc20), address(exchange), address(pool));
 
         feed.setPrice(ethInitialPrice);
         time.setFixedTime(0);
@@ -111,8 +112,6 @@ contract Base {
             100 * volumeBase, // buy stock
             200 * volumeBase  // sell stock
         );
-
-        exchange.createSymbol(symbol, address(feed));
     }
 
     function calcCollateralUnit() internal view returns (uint) {
