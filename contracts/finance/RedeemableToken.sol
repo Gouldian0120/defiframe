@@ -53,11 +53,5 @@ abstract contract RedeemableToken is ERC20 {
             exchange.transferBalance(owner, val);
             removeBalance(owner, bal);
         }
-
-        afterRedeem(owner, bal, val);
-    }
-
-    function afterRedeem(address owner, uint bal, uint val) virtual internal {
-
     }
 }

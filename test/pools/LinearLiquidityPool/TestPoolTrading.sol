@@ -88,8 +88,8 @@ contract TestPoolTrading is Base {
         erc20.issue(address(alice), 5 * cUnit);
 
         alice.depositInExchange(5 * cUnit);
-        address _tk = alice.writeOptions(2, CALL, strike, maturity);
-        OptionToken tk = OptionToken(_tk);
+        uint id = alice.writeOptions(2, CALL, strike, maturity);
+        OptionToken tk = OptionToken(exchange.resolveToken(id));
 
         (uint sellPrice,) = pool.querySell(symbol);
         uint volume = 2 * volumeBase;
@@ -198,8 +198,8 @@ contract TestPoolTrading is Base {
         erc20.issue(address(alice), 5 * cUnit);
 
         alice.depositInExchange(2 * cUnit);
-        address _tk = alice.writeOptions(2, CALL, strike, maturity);
-        OptionToken tk = OptionToken(_tk);
+        uint id = alice.writeOptions(2, CALL, strike, maturity);
+        OptionToken tk = OptionToken(exchange.resolveToken(id));
 
         (uint sellPrice,) = pool.querySell(symbol);
         alice.sellToPool(symbol, sellPrice, volume);

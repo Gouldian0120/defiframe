@@ -41,9 +41,9 @@ contract OptionsTrader {
         uint timeTomaturity
     )
         public
-        returns (address _tk)
+        returns (uint id)
     {
-        _tk = writeOptions(1, optType, strike, timeTomaturity);
+        id = writeOptions(1, optType, strike, timeTomaturity);
     }
 
     function writeOptions(
@@ -53,26 +53,26 @@ contract OptionsTrader {
         uint timeToMaturity
     )
         public
-        returns (address _tk)
+        returns (uint id)
     {
-        _tk = exchange.writeOptions(
+        (id,) = exchange.writeOptions(
             feed, volume * volumeBase, optType, uint(strike), time.getNow() + timeToMaturity, address(this)
         );
     }
 
-    function liquidateOptions(address _tk) public {
+    function liquidateOptions(uint id) public {
         
-        exchange.liquidateOptions(_tk, address(this));
+        exchange.liquidateOptions(id);
     }
 
-    function transferOptions(address to, address _tk, uint volume) public {
+    function transferOptions(address to, uint id, uint volume) public {
 
-        OptionToken(_tk).transfer(to, volume * volumeBase);
+        OptionToken(exchange.resolveToken(id)).transfer(to, volume * volumeBase);
     }
 
-    function burnOptions(address _tk, uint volume) public {
+    function burnOptions(uint id, uint volume) public {
 
-        OptionToken(_tk).burn(volume * volumeBase);
+        OptionToken(exchange.resolveToken(id)).burn(volume * volumeBase);
     }
     
     function calcCollateral() public view returns (uint) {

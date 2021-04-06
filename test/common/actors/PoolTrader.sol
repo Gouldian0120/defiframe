@@ -46,9 +46,9 @@ contract PoolTrader {
         uint maturity
     )
         public
-        returns (address _tk)
+        returns (uint id)
     {
-        (_tk) = exchange.writeOptions(
+        (id,) = exchange.writeOptions(
             feed, volume * volumeBase, optType, strike, maturity, address(this)
         );
     }
