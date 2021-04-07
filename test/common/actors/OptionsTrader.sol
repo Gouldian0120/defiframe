@@ -9,15 +9,13 @@ contract OptionsTrader {
     TimeProvider private time;
     
     address private addr;
-    address private feed;
     uint private volumeBase = 1e18;
     
-    constructor(address _exchange, address _time, address _feed) public {
+    constructor(address _exchange, address _time) public {
 
         exchange = OptionsExchange(_exchange);
         time = TimeProvider(_time);
         addr = address(this);
-        feed = _feed;
     }
     
     function balance() public view returns (uint) {
@@ -55,8 +53,8 @@ contract OptionsTrader {
         public
         returns (uint id)
     {
-        (id,) = exchange.writeOptions(
-            feed, volume * volumeBase, optType, uint(strike), time.getNow() + timeToMaturity, address(this)
+        id = exchange.writeOptions(
+            address(0), volume * volumeBase, optType, uint(strike), time.getNow() + timeToMaturity
         );
     }
 

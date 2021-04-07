@@ -11,47 +11,65 @@ abstract contract RedeemableToken is ERC20 {
 
     OptionsExchange internal exchange;
 
+    address[] internal holders;
+
     function redeemAllowed() virtual public returns(bool);
 
-    function redeem(address owner) external returns (uint value) {
+    function redeem(uint index) external returns (uint) {
 
-        address[] memory owners = new address[](1);
-        owners[0] = owner;
-        value = redeem(owners);
+        require(redeemAllowed(), "redeem not allowed");
+
+        uint v = exchange.balanceOf(address(this));
+        (uint bal, uint val) = redeem(v,  _totalSupply, index);
+        _totalSupply = _totalSupply.sub(bal);
+
+        return val;
     }
 
-    function redeem(address[] memory owners) public returns (uint value) {
+    function destroy() external {
 
-        require(redeemAllowed(), "redeemd not allowed");
+        destroy(uint(-1));
+    }
+
+    function destroy(uint limit) public {
+
+        require(redeemAllowed());
 
         uint valTotal = exchange.balanceOf(address(this));
         uint valRemaining = valTotal;
         uint supplyTotal = _totalSupply;
         uint supplyRemaining = _totalSupply;
         
-        for (uint i = 0; i < owners.length; i++) {
-            if (owners[i] != address(0)) {
-                (uint bal, uint val) = redeem(valTotal, supplyTotal, owners[i]);
-                value = value.add(val);
-                valRemaining = valRemaining.sub(val);
-                supplyRemaining = supplyRemaining.sub(bal);
-            }
+        for (uint i = holders.length - 1; i != uint(-1) && limit != 0 && valRemaining > 0; i--) {
+            (uint bal, uint val) = redeem(valTotal, supplyTotal, i);
+            valRemaining = valRemaining.sub(val);
+            supplyRemaining = supplyRemaining.sub(bal);
+            Arrays.removeAtIndex(holders, i);
+            limit--;
+        }
+        
+        if (valRemaining > 0) {
+            exchange.transferBalance(msg.sender, valRemaining);
         }
 
-        _totalSupply = supplyRemaining;
+        if (supplyRemaining == 0) {
+            selfdestruct(msg.sender);
+        } else {
+            _totalSupply = supplyRemaining;
+        }
     }
 
-    function redeem(uint valTotal, uint supplyTotal, address owner) 
+    function redeem(uint valTotal, uint supplyTotal, uint i) 
         private
         returns (uint bal, uint val)
     {
-        bal = balanceOf(owner);
+        bal = balanceOf(holders[i]);
         
         if (bal > 0) {
             uint b = 1e3;
             val = MoreMath.round(valTotal.mul(bal.mul(b)).div(supplyTotal), b);
-            exchange.transferBalance(owner, val);
-            removeBalance(owner, bal);
+            exchange.transferBalance(holders[i], val);
+            removeBalance(holders[i], bal);
         }
     }
 }

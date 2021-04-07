@@ -32,7 +32,7 @@ contract TestOptionTrading is Base {
         feed.setPrice(ethInitialPrice + step);
         time.setTimeOffset(10 days);
         
-        liquidateAndRedeem(id1);
+        destroyOptionToken(id1);
         feed.setPrice(ethInitialPrice);
         
         alice.withdrawTokens();
@@ -67,7 +67,7 @@ contract TestOptionTrading is Base {
         feed.setPrice(ethInitialPrice + step);
         time.setTimeOffset(10 days);
         
-        liquidateAndRedeem(id1);
+        destroyOptionToken(id1);
 
         (debtIr, debtBase,) = settings.getDebtInterestRate();
         uint debt = uint(step) - ct;
@@ -107,13 +107,13 @@ contract TestOptionTrading is Base {
         feed.setPrice(ethInitialPrice + step);
         time.setTimeOffset(10 days);
         
-        liquidateAndRedeem(id1);
+        destroyOptionToken(id1);
 
         alice.withdrawTokens();
 
         time.setTimeOffset(15 days);
 
-        liquidateAndRedeem(id2);
+        destroyOptionToken(id2);
 
         bob.withdrawTokens();
 
@@ -151,11 +151,11 @@ contract TestOptionTrading is Base {
         feed.setPrice(ethInitialPrice + step);
         time.setTimeOffset(10 days);
         
-        liquidateAndRedeem(id1);
+        destroyOptionToken(id1);
 
         time.setTimeOffset(15 days);
 
-        liquidateAndRedeem(id2);
+        destroyOptionToken(id2);
 
         alice.withdrawTokens();
         bob.withdrawTokens();
@@ -177,10 +177,10 @@ contract TestOptionTrading is Base {
         Assert.equal(exchange.getBookLength(), 0, "book length");
     }
 
-    function testWriteBurnAndRedeem() public {
+    function testWriteBurnAndDestroy() public {
 
         uint ct = exchange.calcCollateral(
-            address(feed), 
+            address(0), 
             300 * volumeBase, 
             CALL, 
             uint(ethInitialPrice), 
@@ -214,7 +214,7 @@ contract TestOptionTrading is Base {
         Assert.equal(tk.balanceOf(address(alice)), 0, "alice options");
 
         time.setTimeOffset(30 days);
-        liquidateAndRedeem(address(tk));
+        destroyOptionToken(address(tk));
         Assert.equal(exchange.getBookLength(), 0, "book length");
     }
 }
