@@ -8,12 +8,22 @@ import "../../../contracts/finance/OptionToken.sol";
 import "../../../contracts/pools/LinearLiquidityPool.sol";
 import "../../../contracts/governance/ProtocolSettings.sol";
 import "../../common/actors/PoolTrader.sol";
+import "../../common/actors/OptionsTrader.sol";
 import "../../common/mock/ERC20Mock.sol";
 import "../../common/mock/EthFeedMock.sol";
 import "../../common/mock/TimeProviderMock.sol";
 
-contract Base {
-    
+contract StablecoinMock is ERC20Mock{
+    uint8 private _decimals;
+    constructor(uint8 decimals) ERC20Mock() public {
+        _decimals=decimals;
+    }
+    function  decimals() override external view returns (uint8){
+        return _decimals;
+    }
+}
+
+contract Base{
     int ethInitialPrice = 550e18;
     uint strike = 550e18;
     uint maturity = 30 days;
@@ -28,26 +38,22 @@ contract Base {
     uint fractionBase = 1e9;
 
     EthFeedMock feed;
-    ERC20Mock erc20;
+    //ERC20Mock erc20;
+    
     TimeProviderMock time;
 
     ProtocolSettings settings;
     OptionsExchange exchange;
 
     LinearLiquidityPool pool;
-    
-    PoolTrader bob;
-    PoolTrader alice;
-    
+        
     OptionsExchange.OptionType CALL = OptionsExchange.OptionType.CALL;
     OptionsExchange.OptionType PUT = OptionsExchange.OptionType.PUT;
 
     uint120[] x;
     uint120[] y;
     string symbol = "ETHM-EC-55e19-2592e3";
-    
     function beforeEachDeploy() public {
-
         Deployer deployer = Deployer(DeployedAddresses.Deployer());
         deployer.reset();
         time = TimeProviderMock(deployer.getContractAddress("TimeProvider"));
@@ -57,39 +63,29 @@ contract Base {
         pool = LinearLiquidityPool(deployer.getContractAddress("LinearLiquidityPool"));
         deployer.deploy();
 
+        
         pool.setParameters(
             spread,
             reserveRatio,
             90 days
         );
+    
 
-        erc20 = new ERC20Mock();
+        //erc20 = new ERC20Mock();
         settings.setOwner(address(this));
-        settings.setAllowedToken(address(erc20), 1, 1);
+        //settings.setAllowedToken(address(erc20), 1, 1);
+        
+
+
+        //settings.setDefaultUdlFeed(address(feed));
         settings.setUdlFeed(address(feed), 1);
 
-        bob = new PoolTrader(address(erc20), address(exchange), address(pool), address(feed));
-        alice = new PoolTrader(address(erc20), address(exchange), address(pool), address(feed));
+        //bob = new PoolTrader(address(erc20), address(exchange), address(pool));
+        //alice = new PoolTrader(address(erc20), address(exchange), address(pool));
 
         feed.setPrice(ethInitialPrice);
         time.setFixedTime(0);
     }
-
-    function depositInPool(address to, uint value) internal {
-        
-        erc20.issue(address(this), value);
-        erc20.approve(address(pool), value);
-        pool.depositTokens(to, address(erc20), value);
-    }
-
-    function applyBuySpread(uint v) internal view returns (uint) {
-        return (v * (spread + fractionBase)) / fractionBase;
-    }
-
-    function applySellSpread(uint v) internal view returns (uint) {
-        return (v * (fractionBase - spread)) / fractionBase;
-    }
-
     function addSymbol() internal {
 
         x = [400e18, 450e18, 500e18, 550e18, 600e18, 650e18, 700e18];
@@ -114,7 +110,6 @@ contract Base {
 
         exchange.createSymbol(symbol, address(feed));
     }
-
     function calcCollateralUnit() internal view returns (uint) {
 
         return exchange.calcCollateral(
@@ -125,4 +120,6 @@ contract Base {
             maturity
         );
     }
+    
+
 }
