@@ -21,9 +21,4 @@ contract ManagedContract {
     function initialize(Deployer deployer) virtual internal {
 
     }
-
-    function getImplementation() internal view returns (address) {
-
-        return implementation;
-    }
 }

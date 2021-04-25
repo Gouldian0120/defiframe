@@ -67,8 +67,6 @@ contract LinearLiquidityPool is LiquidityPool, ManagedContract, RedeemableToken 
 
     function initialize(Deployer deployer) override internal {
 
-        DOMAIN_SEPARATOR = ERC20(getImplementation()).DOMAIN_SEPARATOR();
-
         owner = deployer.getOwner();
         time = TimeProvider(deployer.getContractAddress("TimeProvider"));
         exchange = OptionsExchange(deployer.getContractAddress("OptionsExchange"));
@@ -396,7 +394,7 @@ contract LinearLiquidityPool is LiquidityPool, ManagedContract, RedeemableToken 
             value = value.mul(tv).div(tb);
             depositTokensInExchange(token, value);
         } else {
-            exchange.transferBalance(msg.sender, address(this), value);
+            exchange.transferBalance(msg.sender, address(this), value, maxValue, deadline, v, r, s);
         }
 
         return price;

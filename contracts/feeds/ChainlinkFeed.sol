@@ -4,20 +4,17 @@ import "../interfaces/AggregatorV3Interface.sol";
 import "../interfaces/TimeProvider.sol";
 import "../interfaces/UnderlyingFeed.sol";
 import "../utils/MoreMath.sol";
-import "../utils/SafeCast.sol";
 import "../utils/SafeMath.sol";
 import "../utils/SignedSafeMath.sol";
 
 contract ChainlinkFeed is UnderlyingFeed {
 
-    using SafeCast for int;
-    using SafeCast for uint;
     using SafeMath for uint;
     using SignedSafeMath for int;
 
     struct Sample {
-        uint32 timestamp;
-        int128 price;
+        uint timestamp;
+        int price;
     }
 
     AggregatorV3Interface private aggregator;
@@ -68,7 +65,7 @@ contract ChainlinkFeed is UnderlyingFeed {
 
             uint ts = _timestamps[i];
             int pc = _prices[i];
-            Sample memory s = Sample(ts.toUint32(), rescalePrice(pc));
+            Sample memory s = Sample(ts, rescalePrice(pc));
 
             if (ts.mod(1 days) == 0) {
                 dailyPrices[ts] = s;
@@ -90,7 +87,7 @@ contract ChainlinkFeed is UnderlyingFeed {
     function getLatestPrice() override external view returns (uint timestamp, int price) {
 
         (, price,, timestamp,) = aggregator.latestRoundData();
-        price = int(rescalePrice(price));
+        price = rescalePrice(price);
     }
 
     function getPrice(uint position) 
@@ -195,7 +192,7 @@ contract ChainlinkFeed is UnderlyingFeed {
         (, int price,, uint timestamp,) = aggregator.latestRoundData();
         price = rescalePrice(price);
         require(timestamp > samples[samples.length - 1].timestamp, "already up to date");
-        samples.push(Sample(timestamp.toUint32(), price.toInt128()));
+        samples.push(Sample(timestamp, price));
     }
 
     function prefetchDailyPrice(uint roundId) external {
@@ -211,7 +208,7 @@ contract ChainlinkFeed is UnderlyingFeed {
         price = rescalePrice(price);
 
         uint key = timestamp.div(1 days).mul(1 days);
-        Sample memory s = Sample(timestamp.toUint32(), price.toInt128());
+        Sample memory s = Sample(timestamp, price);
 
         require(
             dailyPrices[key].timestamp == 0 || dailyPrices[key].timestamp > s.timestamp,
@@ -219,7 +216,7 @@ contract ChainlinkFeed is UnderlyingFeed {
         );
         dailyPrices[key] = s;
 
-        if (samples.length == 0 || samples[samples.length - 1].timestamp < s.timestamp) {
+        if (samples.length == 0 || samples[samples.length - 1].timestamp < timestamp) {
             samples.push(s);
         }
     }
@@ -235,9 +232,9 @@ contract ChainlinkFeed is UnderlyingFeed {
         }
     }
 
-    function rescalePrice(int price) private view returns (int128) {
+    function rescalePrice(int price) private view returns (int) {
 
-        return price.mul(priceN).div(priceD).toInt128();
+        return price.mul(priceN).div(priceD);
     }
 
     function encodeValue(uint v) private pure returns (uint) {
