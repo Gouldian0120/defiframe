@@ -21,9 +21,11 @@ contract TestMulticoinTrading is Base {
         stablecoinA = erc20;
 
         stablecoinB = ERC20Mock(deployer.getContractAddress("StablecoinB"));
+        stablecoinB.reset();
         settings.setAllowedToken(address(stablecoinB), 1, 1e9);
 
         stablecoinC = ERC20Mock(deployer.getContractAddress("StablecoinC"));
+        stablecoinC.reset();
         settings.setAllowedToken(address(stablecoinC), 1, 1e12);
 
         addSymbol();
@@ -41,7 +43,7 @@ contract TestMulticoinTrading is Base {
     Trader A deposits the amount of 20*P Stablecoins A in the LiquidityPool
     Trader B buys an option from the pool paying the amount of P with Stablecoin B
     Trader C buys an option from the pool paying the amount of P with Stablecoin C
-    Verify that all options were issued correctly and that the liquidity pool balance is 22*P
+    Verify that all options were issued correctly and that the liquidity pool balance is 102*P
 */
     function testBuyWithMultipleCoins() public {
 
